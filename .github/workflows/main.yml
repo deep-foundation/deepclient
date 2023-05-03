@@ -44,7 +44,6 @@ jobs:
     - name: Build package
       if: steps.check-setup-py.outputs.changed == 'true'
       run: |
-        cp README.md python/README.md
         cd python
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel

@@ -8,6 +8,7 @@ setup(
         # Add your package dependencies here
     ],
     description="Deep Client - a way to connect your favorite language with Deep",
+    long_description="Deep Client - a way to connect your favorite language with Deep"
     license="Unlicense",
     url="https://github.com/deep-foundation/deep-client",
     classifiers=[
