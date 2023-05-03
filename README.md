@@ -5,7 +5,7 @@ Deep Client - a way to connect your favourite language with Deep.
 
 ## Running Tests
 
-To run the test suite, execute the following command from the root directory of the project:
+To run the test suite, execute the following commands from the root directory of the project:
 
 ```
 cd python
