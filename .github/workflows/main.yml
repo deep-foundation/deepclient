@@ -30,20 +30,22 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Change directory
-      run: cd python
-
     - name: Install dependencies
       run: |
+        cd python
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Run tests
-      run: python -m unittest discover -s tests -v
+      run: |
+        cd python
+        python -m unittest discover -s tests -v
 
     - name: Build package
       if: steps.check-setup-py.outputs.changed == 'true'
-      run: python setup.py sdist bdist_wheel
+      run: |
+        cd python
+        python setup.py sdist bdist_wheel
 
     - name: Publish package to PyPI
       if: steps.check-setup-py.outputs.changed == 'true'
