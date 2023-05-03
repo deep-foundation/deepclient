@@ -10,7 +10,7 @@ setup(
     description="Deep Client - a way to connect your favorite language with Deep",
     long_description="Deep Client - a way to connect your favorite language with Deep",
     license="Unlicense",
-    url="https://github.com/deep-foundation/deep-client",
+    url="https://github.com/deep-foundation/deep_client",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: The Unlicense (Unlicense)",
