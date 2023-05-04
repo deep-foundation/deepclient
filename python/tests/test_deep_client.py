@@ -1,6 +1,6 @@
 import unittest
 import asyncio
-from deep_client import DeepClient, DeepClientOptions
+from deepclient import DeepClient, DeepClientOptions
 
 class TestDeepClient(unittest.TestCase):
 

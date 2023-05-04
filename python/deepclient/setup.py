@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="deepclient",
-    version="0.0.1",
+    version="0.0.2",
     packages=find_packages(),
     install_requires=[
         # Add your package dependencies here
@@ -10,7 +10,7 @@ setup(
     description="Deep Client - a way to connect your favorite language with Deep",
     long_description="Deep Client - a way to connect your favorite language with Deep",
     license="Unlicense",
-    url="https://github.com/deep-foundation/deep-client",
+    url="https://github.com/deep-foundation/deepclient",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: The Unlicense (Unlicense)",
