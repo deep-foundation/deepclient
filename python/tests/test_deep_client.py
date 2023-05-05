@@ -37,6 +37,7 @@ class TestDeepClient(unittest.TestCase):
 
     def test_serialize_where(self):
         assert self.client.serialize_where({"id": 5}) == {"id": {"_eq": 5}}
+        assert self.client.serialize_where({"type_id": 5}) == {"type_id": {"_eq": 5}}
         assert self.client.serialize_where({"id": {"_eq": 5}}) == {"id": {"_eq": 5}}
         assert self.client.serialize_where({"value": 5}) == {"number": {"value": {"_eq": 5}}}
         assert self.client.serialize_where({"value": "a"}) == {"string": {"value": {"_eq": "a"}}}
@@ -45,10 +46,13 @@ class TestDeepClient(unittest.TestCase):
         assert self.client.serialize_where({"number": {"value": {"_eq": 5}}}) == {"number": {"value": {"_eq": 5}}}
         assert self.client.serialize_where({"string": {"value": {"_eq": "a"}}}) == {"string": {"value": {"_eq": "a"}}}
         assert self.client.serialize_where({"object": {"value": {"_contains": {"a": "b"}}}}) == {"object": {"value": {"_contains": {"a": "b"}}}}
+        assert self.client.serialize_where({"value": "a"}) == {"string": {"value": {"_eq": "a"}}}
+        assert self.client.serialize_where({ "from": { "type_id": 2, "value": "a" } }) == { "from": { "type_id": {"_eq": 2}, "string": {"value": {"_eq": "a"}} }}
 
         # # Note: Add `async` and `await` for the below test case when implementing in the actual test file
         # type_id_contain = self.client.id("@deep-foundation/core", "Contain")
         # type_id_package = self.client.id("@deep-foundation/core", "Package")
+
         assert self.client.serialize_where(
             {
                 "out": {
