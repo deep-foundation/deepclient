@@ -32,7 +32,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd python/deepclient
+        cd python
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
@@ -44,7 +44,7 @@ jobs:
     - name: Build package
       if: steps.check-setup-py.outputs.changed == 'true'
       run: |
-        cd python/deepclient
+        cd python
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
 
@@ -53,4 +53,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_TOKEN }}
-        packages-dir: python/deepclient/dist/
+        packages-dir: python/dist/
