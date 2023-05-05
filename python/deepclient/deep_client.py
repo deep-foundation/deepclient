@@ -1,5 +1,4 @@
 import asyncio
-from .select import select
 from typing import Any
 from .deep_client_options import DeepClientOptions
 from .query import generate_query, generate_query_data
