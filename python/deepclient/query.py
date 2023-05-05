@@ -52,24 +52,24 @@ def fields_inputs(table_name: str) -> Dict[str, str]:
         "where": f"{table_name}_bool_exp!",
     }
 
- def generate_query(options: Dict[str, Union[str, List[Any]]]) -> Dict[str, Any]:
-       queries = options.get("queries", [])
-       operation = options.get("operation", "query")
-       name = options.get("name", "QUERY")
-       alias = options.get("alias", "q")
-       
-       called_queries = [m(alias, i) if callable(m) else m for i, m in enumerate(queries)]
-       defs = ",".join([",".join(m["defs"]) for m in called_queries])
-       query_string = f"{operation} {name} ({defs}) {{ {','.join([f'{m["resultAlias"]}: {m["queryName"]}({",".join(m["args"])}) {{ {m["resultReturning"]} }}' for m in called_queries])} }}"
-       
-       variables = {}
-       for action in called_queries:
-           for v, variable in action["resultVariables"].items():
-               variables[v] = variable
-               
-       result = {
-           "query": query_string,
-           "variables": variables,
-           "queryString": query_string,
-       }
-       return result
+def generate_query(options: Dict[str, Union[str, List[Any]]]) -> Dict[str, Any]:
+    queries = options.get("queries", [])
+    operation = options.get("operation", "query")
+    name = options.get("name", "QUERY")
+    alias = options.get("alias", "q")
+
+    called_queries = [m(alias, i) if callable(m) else m for i, m in enumerate(queries)]
+    defs = ",".join([",".join(m["defs"]) for m in called_queries])
+    query_string = f"{operation} {name} ({defs}) {{ {','.join([f'{m["resultAlias"]}: {m["queryName"]}({",".join(m["args"])}) {{ {m["resultReturning"]} }}' for m in called_queries])} }}"
+
+    variables = {}
+    for action in called_queries:
+        for v, variable in action["resultVariables"].items():
+            variables[v] = variable
+            
+    result = {
+        "query": query_string,
+        "variables": variables,
+        "queryString": query_string,
+    }
+    return result
