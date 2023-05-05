@@ -2,13 +2,11 @@ import unittest
 import asyncio
 from deepclient import DeepClient, DeepClientOptions
 
-class TestDeepClient(unittest.TestCase):
+class TestDeepClientSelect(unittest.TestCase):
 
     def setUp(self):
         self.options = DeepClientOptions()
         self.client = DeepClient(self.options)
-
-    def test_initialization(self):
         self.assertIsNotNone(self.client)
         self.assertIsNone(self.client.client)
 
