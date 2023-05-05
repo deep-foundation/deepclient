@@ -1,0 +1,1 @@
+query_string = f"{operation} {name} ({defs}) {{ {','.join([f'{m["resultAlias"]}: {m["queryName"]}({",".join(m["args"])}) {{ {m["resultReturning"]} }}' for m in called_queries])} }}"
