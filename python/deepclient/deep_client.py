@@ -2,6 +2,7 @@ import asyncio
 from .select import select
 from typing import Any
 from .deep_client_options import DeepClientOptions
+from .query import generate_query, generate_query_data
 
 class DeepClient:
     _ids = {
@@ -395,12 +396,58 @@ class DeepClient:
                 raise ValueError('undefined in query')
             return exp
 
-    def __init__(self, options: DeepClientOptions):
-        self.gql_client = options.gql_client
+    def __init__(self, options: Optional[DeepClientOptions] = None):
+        if options is None:
+            options = DeepClientOptions()
+
+        self.__dict__.update(options.__dict__)
         self.client = self.gql_client if self.gql_client else None
 
-    async def select(self):
-        raise NotImplementedError("Method not implemented")
+    async def select(self, exp: Union[Dict, int, List[int]], options: Dict = {}) -> Dict:
+        if not exp:
+            return {"error": {"message": "!exp"}, "data": None, "loading": False, "networkStatus": None}
+
+        if isinstance(exp, list):
+            where = {"id": {"_in": exp}}
+        elif isinstance(exp, dict):
+            where = self.serialize_where(exp, options.get("table", "links"))
+        else:
+            where = {"id": {"_eq": exp}}
+        
+        table = options.get("table", self.table)
+        returning = options.get("returning", self.default_returning(table))
+        
+        variables = options.get("variables", None)
+        name = options.get("name", self.default_select_name)
+        
+        q = await self.client.query(generate_query({
+            "queries": [
+                generate_query_data({
+                    "tableName": table,
+                    "returning": returning,
+                    "variables": {
+                        "limit": where.get("limit", None),
+                        **variables,
+                        "where": where,
+                    }
+                }),
+            ],
+            "name": name,
+        }))
+
+        return {**q, "data": q.get("data", {}).get("q0", None)}
+
+    def default_returning(self, table: str) -> str:
+        if table == 'links':
+            return self.links_select_returning
+        elif table in ['strings', 'numbers', 'objects']:
+            return self.values_select_returning
+        elif table == 'selectors':
+            return self.selectors_select_returning
+        elif table == 'files':
+            return self.files_select_returning
+        else:
+            return "id"
 
     async def insert(self):
         raise NotImplementedError("Method not implemented")
