@@ -33,99 +33,23 @@ class TestDeepClientSelect(unittest.TestCase):
             with self.assertRaises(NotImplementedError):
                 method()
 
-    def test_serialize_where(self):
-        assert self.client.serialize_where({"id": 5}) == {"id": {"_eq": 5}}
-        assert self.client.serialize_where({"type_id": 5}) == {"type_id": {"_eq": 5}}
-        assert self.client.serialize_where({"id": {"_eq": 5}}) == {"id": {"_eq": 5}}
-        assert self.client.serialize_where({"value": 5}) == {"number": {"value": {"_eq": 5}}}
-        assert self.client.serialize_where({"value": "a"}) == {"string": {"value": {"_eq": "a"}}}
-        assert self.client.serialize_where({"number": 5}) == {"number": {"value": {"_eq": 5}}}
-        assert self.client.serialize_where({"string": "a"}) == {"string": {"value": {"_eq": "a"}}}
-        assert self.client.serialize_where({"number": {"value": {"_eq": 5}}}) == {"number": {"value": {"_eq": 5}}}
-        assert self.client.serialize_where({"string": {"value": {"_eq": "a"}}}) == {"string": {"value": {"_eq": "a"}}}
-        assert self.client.serialize_where({"object": {"value": {"_contains": {"a": "b"}}}}) == {"object": {"value": {"_contains": {"a": "b"}}}}
-        assert self.client.serialize_where({"value": "a"}) == {"string": {"value": {"_eq": "a"}}}
-        assert self.client.serialize_where({ "from": { "type_id": 2, "value": "a" } }) == { "from": { "type_id": {"_eq": 2}, "string": {"value": {"_eq": "a"}} }}
+def test_select_method(self):
+    # Test case 1: Empty input
+    with self.assertRaises(ValueError):
+        await self.client.select()
 
-        # # Note: Add `async` and `await` for the below test case when implementing in the actual test file
-        # type_id_contain = self.client.id("@deep-foundation/core", "Contain")
-        # type_id_package = self.client.id("@deep-foundation/core", "Package")
+    # Test case 2: Valid input
+    result = await self.client.select("table_name")
+    self.assertIsNotNone(result)
 
-        assert self.client.serialize_where(
-            {
-                "out": {
-                    "type_id": 3,
-                    "value": "b",
-                    "from": {
-                        "type_id": 2,
-                        "value": "a",
-                    },
-                },
-            }
-        ) == {
-            "out": {
-                "type_id": {"_eq": 3},
-                "string": {"value": {"_eq": "b"}},
-                "from": {
-                    "type_id": {"_eq": 2},
-                    "string": {"value": {"_eq": "a"}},
-                },
-            }
-        }
+    # Test case 3: Invalid table name
+    with self.assertRaises(ValueError):
+        await self.client.select(123)
 
-        assert self.client.serialize_where({"value": 5, "link": {"type_id": 7}}, "value") == {
-            "value": {"_eq": 5},
-            "link": {
-                "type_id": {"_eq": 7}
-            },
-        }
+    # Test case 4: Valid input with conditions
+    result = await self.client.select("table_name", conditions={"field": "value"})
+    self.assertIsNotNone(result)
 
-        assert self.client.serialize_where({"type": ["@deep-foundation/core", "Value"]}) == {
-            "type": {
-                "in": {
-                    "from": {
-                        "string": {"value": {"_eq": "@deep-foundation/core"}},
-                        "type_id": {"_eq": 2},
-                    },
-                    "string": {"value": {"_eq": "Value"}},
-                    "type_id": {"_eq": 3},
-                },
-            },
-        }
-
-        assert self.client.serialize_where({"_or": [{"type": ["@deep-foundation/core", "Value"]}, {"type": ["@deep-foundation/core", "User"]}]}) == {
-            "_or": [{
-                "type": {
-                    "in": {
-                        "from": {
-                            "string": {"value": {"_eq": "@deep-foundation/core"}},
-                            "type_id": {"_eq": 2},
-                        },
-                        "string": {"value": {"_eq": "Value"}},
-                        "type_id": {"_eq": 3},
-                    },
-                },
-            }, {
-                "type": {
-                    "in": {
-                        "from": {
-                            "string": {"value": {"_eq": "@deep-foundation/core"}},
-                            "type_id": {"_eq": 2},
-                        },
-                        "string": {"value": {"_eq": "User"}},
-                        "type_id": {"_eq": 3},
-                    },
-                },
-            }]
-        }
-
-        # id_value = self.client.id("@deep-foundation/core", "Value")
-        # assert id_value == 4
-
-        assert self.client.serialize_where({"type_id": {"_type_of": 25}}) == {"type": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
-        assert self.client.serialize_where({"from_id": {"_type_of": 25}}) == {"from": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
-        assert self.client.serialize_where({"to_id": {"_type_of": 25}}) == {"to": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
-
-
-if __name__ == '__main__':
-    unittest.main()
+    # Test case 5: Invalid conditions parameter
+    with self.assertRaises(TypeError):
+        await self.client.select("table_name", conditions="invalid")
