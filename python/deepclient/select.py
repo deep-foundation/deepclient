@@ -17,13 +17,13 @@ class Select:
             where = self.serialize_where(exp, options.get("table", "links"))
         else:
             where = {"id": {"_eq": exp}}
-        
+
         table = options.get("table", self.table)
         returning = options.get("returning", self.default_returning(table))
-        
+
         variables = options.get("variables", None)
         name = options.get("name", self.default_select_name)
-        
+
         q = await self.client.query(self.generate_query({
             "queries": [
                 self.generate_query_data({
