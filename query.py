@@ -1,25 +1,26 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-def generate_query_data(options: Dict[str, Any]) -> Any:
-    def inner(alias: str, index: int) -> Dict[str, Any]:
-        defs = []
-        args = []
-        for field in fields:
-            defs.append(f"${field + index}: {field_types[field]}")
-            args.append(f"{field}: ${field}{index}")
+def generate_query(options: Dict[str, Any]) -> Dict[str, Any]:
+    queries = options.get("queries", [])
+    operation = options.get("operation", "query")
+    name = options.get("name", "QUERY")
+    alias = options.get("alias", "q")
 
-        result_alias = f"{alias}{index if isinstance(index, int) else ''}"
-        result_variables = {}
-        for v, variable in variables.items():
-            result_variables[v + index] = variable
+    called_queries = [query(alias, i) if callable(query) else query for i, query in enumerate(queries)]
+    defs = ",".join([",".join(query["defs"]) for query in called_queries])
+    queryString = f"{operation} {name} ({defs}) {{ {','.join([f'{query["resultAlias"]}: {query["queryName"]}({",".join(query["args"])}) {{ {query["resultReturning"]} }}' for query in called_queries])} }}"
 
-        result = {
-            "tableName": table_name,
-            "operation": operation,
-            "queryName": query_name,
-            "returning": returning,
-            "variables": variables,
-            "resultReturning": returning,
+    variables = {}
+    for query in called_queries:
+        for v, variable in query["resultVariables"].items():
+            variables[v] = variable
+
+    result = {
+        "query": f"gql`{queryString}`",
+        "variables": variables,
+        "queryString": queryString,
+    }
+    return result
             "fields": fields,
             "fieldTypes": field_types,
             "index": index,
