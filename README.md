@@ -8,6 +8,5 @@ Deep Client - a way to connect your favourite language with Deep.
 To run the test suite, execute the following commands from the root directory of the project:
 
 ```
-cd python
-python -m unittest discover -s tests -v
+( cd python && python -m unittest discover -s tests -v )
 ```

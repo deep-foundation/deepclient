@@ -14,7 +14,7 @@ class TestDeepClient(unittest.TestCase):
 
     def test_methods_raise_not_implemented(self):
         async_methods = [
-            'select', 'insert', 'update', 'delete', 'serial', 'reserve', 'wait_for',
+            'insert', 'update', 'delete', 'serial', 'reserve', 'wait_for',
             'id', 'guest', 'jwt', 'whoami', 'login', 'logout', 'can', 'name'
         ]
         sync_methods = [

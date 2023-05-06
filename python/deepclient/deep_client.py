@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import Any, Optional, Union, Dict, List
 from .deep_client_options import DeepClientOptions
 from .query import generate_query, generate_query_data
 
@@ -309,12 +309,9 @@ class DeepClient:
             return [self.serialize_where(e, env) for e in exp]
         elif isinstance(exp, dict):
             keys = exp.keys()
-            print(exp)
-            print(keys)
             result = {}
             for key in keys:
                 key_type = type(exp[key])
-                print(key_type)
                 setted = False
                 is_id_field = key in ['type_id', 'from_id', 'to_id']
                 if env == 'links':
