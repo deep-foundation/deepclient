@@ -128,6 +128,12 @@ class TestDeepClient(unittest.TestCase):
         assert self.client.serialize_where({"from_id": {"_type_of": 25}}) == {"from": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
         assert self.client.serialize_where({"to_id": {"_type_of": 25}}) == {"to": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
 
+    def test_select(self):
+        async def test_async_methods():
+            await self.client.select([1])
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(test_async_methods())
 
 if __name__ == '__main__':
     unittest.main()
