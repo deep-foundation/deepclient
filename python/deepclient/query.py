@@ -61,7 +61,7 @@ def generate_query(options: Dict[str, Union[str, List[Any]]]) -> Dict[str, Any]:
     called_queries = [m(alias, i) if callable(m) else m for i, m in enumerate(queries)]
     defs = ",".join([",".join(m["defs"]) for m in called_queries])
     query_body = ','.join([f'{m["resultAlias"]}: {m["queryName"]}({",".join(m["args"])}) {{ {m["resultReturning"]} }}' for m in called_queries])
-    query_string = f"{operation} {name} ({defs}) {{query_body}}"
+    query_string = f"{operation} {name} ({defs}) {{{query_body}}}"
 
     variables = {}
     for action in called_queries:
