@@ -57,18 +57,16 @@ class TestDeepClient(unittest.TestCase):
         assert self.client.serialize_where({"value": "a"}) == {"string": {"value": {"_eq": "a"}}}
         assert self.client.serialize_where({ "from": { "type_id": 2, "value": "a" } }) == { "from": { "type_id": {"_eq": 2}, "string": {"value": {"_eq": "a"}} }}
 
-        assert self.client.serialize_where(
-            {
-                "out": {
-                    "type_id": 3,
-                    "value": "b",
-                    "from": {
-                        "type_id": 2,
-                        "value": "a",
-                    },
+        assert self.client.serialize_where({
+            "out": {
+                "type_id": 3,
+                "value": "b",
+                "from": {
+                    "type_id": 2,
+                    "value": "a",
                 },
-            }
-        ) == {
+            },
+        }) == {
             "out": {
                 "type_id": {"_eq": 3},
                 "string": {"value": {"_eq": "b"}},
@@ -133,7 +131,7 @@ class TestDeepClient(unittest.TestCase):
         async def test_async_methods():
             assert (await self.client.select(1))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
             assert (await self.client.select({ "id": 1 }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
-            assert (await self.client.select({ "id": { "_eq": 1 }}))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+            assert (await self.client.select({ "id": { "_eq": 1 } }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_async_methods())
