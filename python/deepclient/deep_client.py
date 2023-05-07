@@ -416,7 +416,7 @@ class DeepClient:
         variables = options.get("variables", None)
         name = options.get("name", self.default_select_name)
         
-        q = await self.client.query(generate_query({
+        q = await self.client.execute(generate_query({
             "queries": [
                 generate_query_data({
                     "tableName": table,

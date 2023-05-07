@@ -1,16 +1,24 @@
 import unittest
 import asyncio
 from deepclient import DeepClient, DeepClientOptions
+from gql import gql, Client
+from gql.transport.aiohttp import AIOHTTPTransport
 
 class TestDeepClient(unittest.TestCase):
 
     def setUp(self):
-        self.options = DeepClientOptions()
+        transport = AIOHTTPTransport(
+            url='https://SERVER_URL:SERVER_PORT/graphql',
+            headers={'Authorization': 'token'}
+        )
+        client = Client(transport=transport, fetch_schema_from_transport=True)
+
+        self.options = DeepClientOptions(gql_client=client)
         self.client = DeepClient(self.options)
 
     def test_initialization(self):
         self.assertIsNotNone(self.client)
-        self.assertIsNone(self.client.client)
+        self.assertIsNotNone(self.client.client)
 
     def test_methods_raise_not_implemented(self):
         async_methods = [
@@ -130,7 +138,7 @@ class TestDeepClient(unittest.TestCase):
 
     def test_select(self):
         async def test_async_methods():
-            await self.client.select([1])
+            await self.client.select(1)
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_async_methods())
