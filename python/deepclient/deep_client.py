@@ -413,10 +413,10 @@ class DeepClient:
         table = options.get("table", self.table)
         returning = options.get("returning", self.default_returning(table))
         
-        variables = options.get("variables", None)
+        variables = options.get("variables", {})
         name = options.get("name", self.default_select_name)
-        
-        q = await self.client.execute(generate_query({
+
+        generated_query = generate_query({
             "queries": [
                 generate_query_data({
                     "tableName": table,
@@ -429,9 +429,12 @@ class DeepClient:
                 }),
             ],
             "name": name,
-        }))
-
-        return {**q, "data": q.get("data", {}).get("q0", None)}
+        })
+        
+        q = await self.client.execute_async(generated_query['query'], variable_values=generated_query['variables'])
+        data = q.get("q0", [])
+        del q["q0"]
+        return { **q, "data": data }
 
     def default_returning(self, table: str) -> str:
         if table == 'links':

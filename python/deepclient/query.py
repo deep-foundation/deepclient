@@ -1,17 +1,18 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
+from gql import gql
 
 def generate_query_data(options: Dict[str, Any]) -> Any:
     def inner(alias: str, index: int) -> Dict[str, Any]:
         defs = []
         args = []
         for field in fields:
-            defs.append(f"${field + index}: {field_types[field]}")
+            defs.append(f"${field + str(index)}: {field_types[field]}")
             args.append(f"{field}: ${field}{index}")
 
         result_alias = f"{alias}{index if isinstance(index, int) else ''}"
         result_variables = {}
         for v, variable in variables.items():
-            result_variables[v + index] = variable
+            result_variables[v + str(index)] = variable
 
         result = {
             "tableName": table_name,
@@ -62,15 +63,18 @@ def generate_query(options: Dict[str, Union[str, List[Any]]]) -> Dict[str, Any]:
     defs = ",".join([",".join(m["defs"]) for m in called_queries])
     query_body = ','.join([f'{m["resultAlias"]}: {m["queryName"]}({",".join(m["args"])}) {{ {m["resultReturning"]} }}' for m in called_queries])
     query_string = f"{operation} {name} ({defs}) {{{query_body}}}"
+    query = gql(query_string)
 
     variables = {}
     for action in called_queries:
         for v, variable in action["resultVariables"].items():
             variables[v] = variable
-            
+
+    # print(query_string)
+    # print(variables)
     result = {
-        "query": query_string,
+        "query": query,
         "variables": variables,
-        "queryString": query_string,
+        "query_string": query_string,
     }
     return result

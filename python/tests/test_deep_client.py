@@ -8,8 +8,8 @@ class TestDeepClient(unittest.TestCase):
 
     def setUp(self):
         transport = AIOHTTPTransport(
-            url='https://SERVER_URL:SERVER_PORT/graphql',
-            headers={'Authorization': 'token'}
+            url='https://3006-deepfoundation-dev-kgyolopnp3g.ws-eu96b.gitpod.io/gql',
+            headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiMzc4In0sImlhdCI6MTY4MTMwNTA3OX0.Gr6wEG9VxMZ4mLqTEkZfN9kIYAjAXGm1r5YCXJTKRws'}
         )
         client = Client(transport=transport, fetch_schema_from_transport=True)
 
@@ -138,7 +138,17 @@ class TestDeepClient(unittest.TestCase):
 
     def test_select(self):
         async def test_async_methods():
-            await self.client.select(1)
+            assert (await self.client.select(1))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+            assert (await self.client.select({ "id": 1 }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+            assert (await self.client.select({ "id": { "_eq": 1 }}))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(test_async_methods())
+
+    # def test_id(self):
+    #     async def test_async_methods():
+    #         result = await self.client.id("@deep-foundation/core", "Contain")
+    #         assert result == 3
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_async_methods())
