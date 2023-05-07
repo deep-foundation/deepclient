@@ -1,4 +1,4 @@
-def select(self, index: int) -> None:
+async def select(self, index: int) -> None:
     if self.variables is None:
         raise RuntimeError("Variables mapping is not initialized. Make sure to call 'connect' method first.")
 
