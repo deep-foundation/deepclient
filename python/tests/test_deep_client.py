@@ -145,13 +145,9 @@ class TestDeepClient(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_async_methods())
 
-    # def test_id(self):
-    #     async def test_async_methods():
-    #         result = await self.client.id("@deep-foundation/core", "Contain")
-    #         assert result == 3
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(test_async_methods())
+    async def test_id_method(self):
+        result = await self.client.id("@deep-foundation/core", "Contain")
+        assert result == 3
 
 if __name__ == '__main__':
     unittest.main()
