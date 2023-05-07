@@ -466,8 +466,23 @@ class DeepClient:
     async def wait_for(self):
         raise NotImplementedError("Method not implemented")
 
-    async def id(self):
-        raise NotImplementedError("Method not implemented")
+    # async def id(self, start: Union[DeepClientStartItem, BoolExpLink], *path: DeepClientPathItem) -> int:
+    async def id(self, start: Any, *path: Any) -> int:
+        if isinstance(start, dict):
+            return (await self.select(start)).get("data")[0].get("id")
+        
+        if self._ids.get(start) and self._ids[start].get(path[0]):
+            return self._ids[start][path[0]]
+        
+        q = await self.select(path_to_where(start, *path))
+        if q.get("error"):
+            raise Exception(q["error"])
+
+        result = q.get("data")[0].get("id") or self._ids.get(start).get(path[0]) or 0
+        if not result and path[-1] != True:
+            raise Exception(f"Id not found by {json.dumps([start, *path])}")
+
+        return result
 
     def id_local(self):
         raise NotImplementedError("Method not implemented")

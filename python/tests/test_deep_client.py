@@ -23,7 +23,7 @@ class TestDeepClient(unittest.TestCase):
     def test_methods_raise_not_implemented(self):
         async_methods = [
             'insert', 'update', 'delete', 'serial', 'reserve', 'wait_for',
-            'id', 'guest', 'jwt', 'whoami', 'login', 'logout', 'can', 'name'
+            'guest', 'jwt', 'whoami', 'login', 'logout', 'can', 'name'
         ]
         sync_methods = [
             'id_local', 'name_local'
@@ -56,10 +56,6 @@ class TestDeepClient(unittest.TestCase):
         assert self.client.serialize_where({"object": {"value": {"_contains": {"a": "b"}}}}) == {"object": {"value": {"_contains": {"a": "b"}}}}
         assert self.client.serialize_where({"value": "a"}) == {"string": {"value": {"_eq": "a"}}}
         assert self.client.serialize_where({ "from": { "type_id": 2, "value": "a" } }) == { "from": { "type_id": {"_eq": 2}, "string": {"value": {"_eq": "a"}} }}
-
-        # # Note: Add `async` and `await` for the below test case when implementing in the actual test file
-        # type_id_contain = self.client.id("@deep-foundation/core", "Contain")
-        # type_id_package = self.client.id("@deep-foundation/core", "Package")
 
         assert self.client.serialize_where(
             {
@@ -129,9 +125,6 @@ class TestDeepClient(unittest.TestCase):
             }]
         }
 
-        # id_value = self.client.id("@deep-foundation/core", "Value")
-        # assert id_value == 4
-
         assert self.client.serialize_where({"type_id": {"_type_of": 25}}) == {"type": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
         assert self.client.serialize_where({"from_id": {"_type_of": 25}}) == {"from": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
         assert self.client.serialize_where({"to_id": {"_type_of": 25}}) == {"to": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
@@ -145,10 +138,11 @@ class TestDeepClient(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_async_methods())
 
-    # def test_id(self):
-    #     async def test_async_methods():
-    #         result = await self.client.id("@deep-foundation/core", "Contain")
-    #         assert result == 3
+    def test_id(self):
+        async def test_async_methods():
+            assert (await self.client.id("@deep-foundation/core", "Package")) == 2
+            assert (await self.client.id("@deep-foundation/core", "Contain")) == 3
+            assert (await self.client.id("@deep-foundation/core", "Value")) == 4
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_async_methods())
