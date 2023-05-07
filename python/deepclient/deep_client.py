@@ -1,6 +1,8 @@
 import asyncio
 from typing import Any, Optional, Union, Dict, List
-from .deep_client_options import DeepClientOptions
+from deepclient.deep_client_options import DeepClientOptions
+from deepclient.path_to_where import path_to_where
+from deepclient.query import generate_query, generate_query_data
 from .query import generate_query, generate_query_data
 
 class DeepClient:
