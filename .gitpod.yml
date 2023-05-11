@@ -1,0 +1,2 @@
+tasks:
+  - init: ( cd python && pip install -r requirements.txt )

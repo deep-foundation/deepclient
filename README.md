@@ -3,6 +3,12 @@
 
 Deep Client - a way to connect your favourite language with Deep.
 
+## Install dependencies
+
+```
+( cd python && pip install -r requirements.txt )
+```
+
 ## Running Tests
 
 To run the test suite, execute the following commands from the root directory of the project:

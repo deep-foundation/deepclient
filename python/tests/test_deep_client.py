@@ -4,7 +4,7 @@ from deepclient import DeepClient, DeepClientOptions
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
-class TestDeepClient(unittest.TestCase):
+class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         transport = AIOHTTPTransport(
@@ -20,7 +20,7 @@ class TestDeepClient(unittest.TestCase):
         self.assertIsNotNone(self.client)
         self.assertIsNotNone(self.client.client)
 
-    def test_methods_raise_not_implemented(self):
+    async def test_methods_raise_not_implemented(self):
         async_methods = [
             'insert', 'update', 'delete', 'serial', 'reserve', 'wait_for',
             'guest', 'jwt', 'whoami', 'login', 'logout', 'can', 'name'
@@ -29,14 +29,10 @@ class TestDeepClient(unittest.TestCase):
             'id_local', 'name_local'
         ]
 
-        async def test_async_methods():
-            for method_name in async_methods:
-                method = getattr(self.client, method_name)
-                with self.assertRaises(NotImplementedError):
-                    await method()
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(test_async_methods())
+        for method_name in async_methods:
+            method = getattr(self.client, method_name)
+            with self.assertRaises(NotImplementedError):
+                await method()
 
         for method_name in sync_methods:
             method = getattr(self.client, method_name)
@@ -127,23 +123,16 @@ class TestDeepClient(unittest.TestCase):
         assert self.client.serialize_where({"from_id": {"_type_of": 25}}) == {"from": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
         assert self.client.serialize_where({"to_id": {"_type_of": 25}}) == {"to": {"_by_item": {"path_item_id": {"_eq": 25}, "group_id": {"_eq": 0}}}}
 
-    def test_select(self):
-        async def test_async_methods():
-            assert (await self.client.select(1))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
-            assert (await self.client.select({ "id": 1 }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
-            assert (await self.client.select({ "id": { "_eq": 1 } }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+    async def test_select(self):
+        assert (await self.client.select(1))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+        assert (await self.client.select({ "id": 1 }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+        assert (await self.client.select({ "id": { "_eq": 1 } }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(test_async_methods())
+    async def test_id(self):
+        assert (await self.client.id("@deep-foundation/core", "Package")) == 2
+        assert (await self.client.id("@deep-foundation/core", "Contain")) == 3
+        assert (await self.client.id("@deep-foundation/core", "Value")) == 4
 
-    def test_id(self):
-        async def test_async_methods():
-            assert (await self.client.id("@deep-foundation/core", "Package")) == 2
-            assert (await self.client.id("@deep-foundation/core", "Contain")) == 3
-            assert (await self.client.id("@deep-foundation/core", "Value")) == 4
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(test_async_methods())
 
 if __name__ == '__main__':
     unittest.main()
