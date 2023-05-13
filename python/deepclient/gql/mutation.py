@@ -25,13 +25,14 @@ class GenerateMutationOptions:
             query_name: Optional[str] = None,
             returning: Optional[str] = None,
             variables: Optional[Dict[str, Any]] = None,
+            alias: Optional[str] = None,
     ):
         self.table_name = table_name
         self.operation = operation
         self.query_name = query_name or f"{operation}_{table_name}"
         self.returning = returning or "id"
         self.variables = variables or {}
-
+        self.alias = alias
 
 class GenerateMutationResult(GenerateMutationOptions):
     def __init__(
@@ -60,15 +61,20 @@ class GenerateMutationResult(GenerateMutationOptions):
         self.result_variables = result_variables
 
 
-def generate_mutation(tableName: str, operation: str, queryName: str = None, returning: str = 'id',
-                      variables: dict = None):
-
+def generate_mutation(
+    tableName: str, 
+    operation: str, 
+    queryName: str = None, 
+    returning: str = 'id',
+    variables: dict = None,
+    alias: str = None
+):
     if queryName is None:
         queryName = f"{operation}_{tableName}"
-
+    
     if variables is None:
         variables = {}
-
+    
     fields = {
         'insert': ['objects', 'on_conflict'],
         'update': ['_inc', '_set', 'where'],
@@ -78,7 +84,6 @@ def generate_mutation(tableName: str, operation: str, queryName: str = None, ret
     fieldTypes = fields_inputs(tableName)
 
     def builder(alias: str, index: int):
-
         defs = []
         args = []
 
@@ -86,7 +91,7 @@ def generate_mutation(tableName: str, operation: str, queryName: str = None, ret
             if field in variables:
                 defs.append(f"${field}{index}: {fieldTypes[field]}")
                 args.append(f"{field}: ${field}{index}")
-
+        
         result_alias = f"{alias}{index if isinstance(index, int) else ''}"
         result_returning = f"returning {{ {returning} }}"
         result_variables = {f"{v}{index}": variable for v, variable in variables.items()}
@@ -120,7 +125,10 @@ def insert_mutation(table_name: str, variables: Dict[str, Any], options: Optiona
         options.table_name = table_name
         options.operation = "insert"
         options.variables = variables
-        return generate_mutation(options)
+    return generate_mutation(table_name, "insert", variables=variables, alias=options.alias)
+
+
+
 
 
 def update_mutation(table_name: str, variables: Dict[str, Any], options: Optional[GenerateMutationOptions] = None) -> \

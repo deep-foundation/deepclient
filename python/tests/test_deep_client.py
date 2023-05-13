@@ -4,8 +4,8 @@ from deepclient import DeepClient, DeepClientOptions
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
-from python.deepclient.gql.mutation import insert_mutation, GenerateMutationOptions
-
+from deepclient.gql.mutation import insert_mutation, GenerateMutationOptions
+from deepclient.gql.serial import ISerialOptions, generate_serial, ISerialResult
 
 class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
@@ -139,21 +139,38 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
     def test_insert_mutation_without_options(self):
         table_name = "test_table"
         variables = {"column1": "value1", "column2": "value2"}
-        result = insert_mutation(table_name, variables)()
+        options = GenerateMutationOptions(table_name=table_name, operation="insert", variables=variables)
+        result = insert_mutation(table_name, variables, options)("some_alias", 0)
 
-        assert result.options.table_name == "test_table"
-        assert result.options.operation == "insert"
-        assert result.options.variables == variables
+        assert result['tableName'] == "test_table"
+        assert result['operation'] == "insert"
+        assert result['variables'] == variables
+
 
     def test_insert_mutation_with_options(self):
         table_name = "test_table"
         variables = {"column1": "value1", "column2": "value2"}
-        options = GenerateMutationOptions()
-        result = insert_mutation(table_name, variables, options)()
+        options = GenerateMutationOptions(table_name=table_name, operation="insert", variables=variables)
+        result = insert_mutation(table_name, variables, options)("some_alias", 0)
 
-        assert result.options.table_name == "test_table"
-        assert result.options.operation == "insert"
-        assert result.options.variables == variables
+        assert result['tableName'] == "test_table"
+        assert result['operation'] == "insert"
+        assert result['variables'] == variables
+    
+    def test_generate_serial(self):
+        # Определите входные данные для вашей функции
+        actions = [lambda alias, i: {'defs': [f"{alias}{i}"], 'args': [], 'queryName': 'query', 'resultAlias': alias,
+                                     'resultReturning': 'returning', 'resultVariables': {}}]
+        serial_options = ISerialOptions(actions, 'SERIAL', 'm')
+
+        # Вызовите функцию с вашими входными данными
+        result = generate_serial(serial_options)
+
+        # Проверьте, что возвращаемый результат соответствует ожидаемому
+        self.assertIsInstance(result, ISerialResult)
+        self.assertEqual(result.mutation_string, 'mutation SERIAL (m0) m: query() { returning }')
+        self.assertEqual(result.variables, {})
+
 
 
 if __name__ == '__main__':
