@@ -4,6 +4,9 @@ from deepclient import DeepClient, DeepClientOptions
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
+from python.deepclient.gql.mutation import insert_mutation, GenerateMutationOptions
+
+
 class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
@@ -132,6 +135,25 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
         assert (await self.client.id("@deep-foundation/core", "Contain")) == 3
         assert (await self.client.id("@deep-foundation/core", "Value")) == 4
+
+    def test_insert_mutation_without_options(self):
+        table_name = "test_table"
+        variables = {"column1": "value1", "column2": "value2"}
+        result = insert_mutation(table_name, variables)()
+
+        assert result.options.table_name == "test_table"
+        assert result.options.operation == "insert"
+        assert result.options.variables == variables
+
+    def test_insert_mutation_with_options(self):
+        table_name = "test_table"
+        variables = {"column1": "value1", "column2": "value2"}
+        options = GenerateMutationOptions()
+        result = insert_mutation(table_name, variables, options)()
+
+        assert result.options.table_name == "test_table"
+        assert result.options.operation == "insert"
+        assert result.options.variables == variables
 
 
 if __name__ == '__main__':

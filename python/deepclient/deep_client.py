@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any, Optional, Union, Dict, List
 from .deep_client_options import DeepClientOptions
+from .gql.serial import generate_serial
 from .query import generate_query, generate_query_data
 
 class DeepClient:
@@ -448,8 +449,66 @@ class DeepClient:
         else:
             return "id"
 
-    async def insert(self):
-        raise NotImplementedError("Method not implemented")
+    async def insert(self, objects, options=None):
+        if options is None:
+            options = {}
+        _objects = objects if isinstance(objects, list) else [objects]
+        table = options.get('table', self.table)
+        returning = options.get('returning', self.insertReturning)
+        variables = options.get('variables', {})
+        name = options.get('name', self.defaultInsertName)
+        q = {}
+        try:
+            q = await self.apollo_client.mutate(generate_serial({
+                'actions': [insert_mutation(table, {**variables, 'objects': _objects},
+                                            {'tableName': table, 'operation': 'insert', 'returning': returning})],
+                'name': name
+            }))
+        except Exception as e:
+            if 'graphQLErrors' in e and len(e['graphQLErrors']) > 0 and 'extensions' in e['graphQLErrors'][
+                0] and 'internal' in e['graphQLErrors'][0]['extensions'] and 'error' in \
+                    e['graphQLErrors'][0]['extensions']['internal']:
+                e.message = e['graphQLErrors'][0]['extensions']['internal']['error']['message']
+            if not self._silent(options):
+                raise e
+            return {**q, 'data': q['data']['m0']['returning'] if 'data' in q and 'm0' in q['data'] and 'returning' in
+                                                                 q['data']['m0'] else None, 'error': e}
+
+    async def update(self, exp: Union[Dict, int, List[int]], value: Dict, options: Dict = {}) -> Dict:
+        if isinstance(exp, list):
+            where = {"id": {"_in": exp}}
+        elif isinstance(exp, dict):
+            where = self.serialize_where(exp, options.get("table", self.table) if options.get("table",
+                                                                                              self.table) else 'value')
+        else:
+            where = {"id": {"_eq": exp}}
+
+        table = options.get("table", self.table)
+        returning = options.get("returning", self.update_returning)
+        variables = options.get("variables", {})
+        name = options.get("name", self.default_update_name)
+
+        try:
+            generated_serial = generate_serial({
+                "actions": [update_mutation(table, {**variables, "where": where, "_set": value},
+                                            {"tableName": table, "operation": "update", "returning": returning})],
+                "name": name,
+            })
+
+            q = await self.client.execute_async(generated_serial['query.py'],
+                                                variable_values=generated_serial['variables'])
+        except Exception as e:
+            sql_error = e.graphQLErrors[0].extensions.internal.error if e.graphQLErrors[
+                0].extensions.internal.error else None
+            if sql_error and sql_error.message:
+                e.message = sql_error.message
+            if not self._silent(options):
+                raise e
+            return {**q, "data": q.get("m0", {}).get("returning", None), "error": e}
+
+        data = q.get("m0", {}).get("returning", [])
+        del q["m0"]
+        return {**q, "data": data}
 
     async def update(self):
         raise NotImplementedError("Method not implemented")
