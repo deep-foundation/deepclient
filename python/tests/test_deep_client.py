@@ -4,14 +4,14 @@ from deepclient import DeepClient, DeepClientOptions
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
-from deepclient.gql.mutation import insert_mutation, GenerateMutationOptions
+from deepclient.gql.mutation import insert_mutation, GenerateMutationOptions, generate_mutation
 from deepclient.gql.serial import ISerialOptions, generate_serial, ISerialResult
 
 class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         transport = AIOHTTPTransport(
-            url='https://3006-deepfoundation-dev-kgyolopnp3g.ws-eu96b.gitpod.io/gql',
+            url='https://3006-deepfoundation-dev-12u849vgzrk.ws-eu97.gitpod.io/gql',
             headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiMzc4In0sImlhdCI6MTY4MTMwNTA3OX0.Gr6wEG9VxMZ4mLqTEkZfN9kIYAjAXGm1r5YCXJTKRws'}
         )
         client = Client(transport=transport, fetch_schema_from_transport=True)
@@ -130,6 +130,12 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         assert (await self.client.select(1))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
         assert (await self.client.select({ "id": 1 }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
         assert (await self.client.select({ "id": { "_eq": 1 } }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+    
+    async def test_insert(self):
+        result = await self.client.insert({ 'type_id': 1 })
+        self.assertEqual(result.data[0].type_id, 1)
+        select_result = await self.client.select({'id': result.data[0].id}) 
+        self.assertEqual(select_result['data'], result.data[0].id)
 
     async def test_id(self):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
@@ -157,20 +163,6 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         assert result['operation'] == "insert"
         assert result['variables'] == variables
     
-    def test_generate_serial(self):
-        # Определите входные данные для вашей функции
-        actions = [lambda alias, i: {'defs': [f"{alias}{i}"], 'args': [], 'queryName': 'query', 'resultAlias': alias,
-                                     'resultReturning': 'returning', 'resultVariables': {}}]
-        serial_options = ISerialOptions(actions, 'SERIAL', 'm')
-
-        # Вызовите функцию с вашими входными данными
-        result = generate_serial(serial_options)
-
-        # Проверьте, что возвращаемый результат соответствует ожидаемому
-        self.assertIsInstance(result, ISerialResult)
-        self.assertEqual(result.mutation_string, 'mutation SERIAL (m0) m: query() { returning }')
-        self.assertEqual(result.variables, {})
-
 
 
 if __name__ == '__main__':

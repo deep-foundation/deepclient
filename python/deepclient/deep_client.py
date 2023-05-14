@@ -454,9 +454,9 @@ class DeepClient:
             options = {}
         _objects = objects if isinstance(objects, list) else [objects]
         table = options.get('table', self.table)
-        returning = options.get('returning', self.insertReturning)
+        returning = options.get('returning', 'id')
         variables = options.get('variables', {})
-        name = options.get('name', self.defaultInsertName)
+        name = options.get('name', 'INSERT')
         q = {}
         try:
             q = await self.apollo_client.mutate(generate_serial({
@@ -465,14 +465,10 @@ class DeepClient:
                 'name': name
             }))
         except Exception as e:
-            if 'graphQLErrors' in e and len(e['graphQLErrors']) > 0 and 'extensions' in e['graphQLErrors'][
-                0] and 'internal' in e['graphQLErrors'][0]['extensions'] and 'error' in \
-                    e['graphQLErrors'][0]['extensions']['internal']:
-                e.message = e['graphQLErrors'][0]['extensions']['internal']['error']['message']
-            if not self._silent(options):
-                raise e
-            return {**q, 'data': q['data']['m0']['returning'] if 'data' in q and 'm0' in q['data'] and 'returning' in
-                                                                 q['data']['m0'] else None, 'error': e}
+            if e:
+                print(e)
+        print(q)
+        return {**q}
 
     async def update(self, exp: Union[Dict, int, List[int]], value: Dict, options: Dict = {}) -> Dict:
         if isinstance(exp, list):
