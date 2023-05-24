@@ -188,6 +188,23 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         # assert select_result1['data'] == []
         # assert select_result2['data'] == []
 
+    async def test_update(self):
+        # Insert a new record
+        new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
+        insert_result = await self.client.insert(new_record)
+        insert_result_data = insert_result['data']['returning'][0]
+
+        # Update the inserted record
+        updated_record = {"type_id": 59, "from_id": 1, "to_id": 1}
+        update_result = await self.client.update({"id": {"_eq": insert_result_data['id']}}, updated_record)
+
+        # Validate the update by selecting the updated record
+        select_result = await self.client.select({"id": {"_eq": insert_result_data['id']}})
+        select_result_data = select_result['data'][0]
+        assert select_result_data["type_id"] == updated_record["type_id"]
+        assert select_result_data["from_id"] == updated_record["from_id"]
+        assert select_result_data["to_id"] == updated_record["to_id"]
+
     async def test_id(self):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
         assert (await self.client.id("@deep-foundation/core", "Contain")) == 3

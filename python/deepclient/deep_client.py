@@ -489,7 +489,7 @@ class DeepClient:
 
         table = options.get("table", self.table)
         returning = options.get("returning", self.default_returning(table))
-        name = options.get("name", self.default_update_name)
+        name = options.get("name", "UPDATE")
 
         generated_mutation = generate_update_mutation({
             "mutations": [
@@ -497,7 +497,7 @@ class DeepClient:
                     "tableName": table,
                     "returning": returning,
                     "variables": {
-                        "_set": record,
+                        "set": record,
                         "where": condition,
                     }
                 }),
@@ -508,7 +508,7 @@ class DeepClient:
         m = await self.client.execute_async(generated_mutation['mutation'],
                                             variable_values=generated_mutation['variables'])
         data = m.get("m0", [])
-        del m["m0"]
+        # del m["m0"]
         return {**m, "data": data}
 
     async def delete(self, exp: Union[Dict, int, List[int]], options: Dict = {}) -> Dict:

@@ -55,7 +55,7 @@ def generate_update_mutation(options: Dict[str, Union[str, List[Any]]]) -> Dict[
     defs = ",".join([",".join(m.get("defs", [])) for m in mutations])
     mutation_bodies = [f'{m["resultAlias"]}: update_{m["tableName"]}(where: $where, _set: $set) {{ affected_rows }}' for
                        m in mutations]
-    mutation_string = f"{operation} {name}({defs}) {{{','.join(mutation_bodies)}}}"
+    mutation_string = f"{operation} {name}($where: links_bool_exp!, $set: links_set_input) {{{','.join(mutation_bodies)}}}"
     mutation = gql(mutation_string)
 
     result_variables = {}
