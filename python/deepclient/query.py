@@ -70,8 +70,6 @@ def generate_query(options: Dict[str, Union[str, List[Any]]]) -> Dict[str, Any]:
         for v, variable in action["resultVariables"].items():
             variables[v] = variable
 
-    # print(query_string)
-    # print(variables)
     result = {
         "query": query,
         "variables": variables,
