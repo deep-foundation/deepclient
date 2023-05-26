@@ -9,7 +9,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         transport = AIOHTTPTransport(
-            url='https://3006-deepfoundation-dev-jbu8x3e7jwl.ws-eu97.gitpod.io/gql',
+            url='https://3006-deepfoundation-dev-jbu8x3e7jwl.ws-eu98.gitpod.io/gql',
             headers={
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiMzc4In0sImlhdCI6MTY4MTMwNTA3OX0.Gr6wEG9VxMZ4mLqTEkZfN9kIYAjAXGm1r5YCXJTKRws'}
         )
@@ -204,6 +204,62 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         assert select_result_data["type_id"] == updated_record["type_id"]
         assert select_result_data["from_id"] == updated_record["from_id"]
         assert select_result_data["to_id"] == updated_record["to_id"]
+
+    async def test_serial(self):
+        typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
+        # One insert test
+        linkIdsToDelete = []
+        try:
+            operation = {
+                "table": 'links',
+                "type": 'insert',
+                "objects": {
+                    "type_id": 58, "from_id": 0, "to_id": 0
+                }
+            }
+            result = await self.client.serial({
+                "operations": [
+                    operation,
+                ]
+            })
+
+            insert_result_data = result['links']['returning'][0]
+            linkIdsToDelete.append(insert_result_data["id"])
+            assert insert_result_data["type_id"] == 58
+            assert insert_result_data["from_id"] == 0
+            assert insert_result_data["to_id"] == 0
+        finally:
+            await self.client.delete({"id": linkIdsToDelete[0]})
+
+        # Multiple inserts in one operation test
+        linkIdsToDelete = []
+        try:
+            result = await self.client.serial({
+                "operations": [
+                    operation,
+                    operation
+                ]
+            })
+            insert_result_data = result['links']['returning']
+            linkIdsToDelete.extend(insert_result_data)
+        finally:
+            await self.client.delete({"id": linkIdsToDelete[0]["id"]})
+
+        # # Multiple inserts in multiple operations test
+        # linkIdsToDelete = []
+        # try:
+        #     result = await self.client.serial({
+        #         "operations": [
+        #             operation,
+        #             operation
+        #         ]
+        #     })
+        #     assert result['error'] is None
+        #     assert result['data'] is not None
+        #     linkIdsToDelete.extend(result['data'].id)
+        #     assert len(result['data']) == 2
+        # finally:
+        #     await self.client.delete(linkIdsToDelete)
 
     async def test_id(self):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
