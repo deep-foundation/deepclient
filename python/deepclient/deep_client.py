@@ -2,7 +2,9 @@ import asyncio
 from typing import Any, Optional, Union, Dict, List
 from .deep_client_options import DeepClientOptions
 from .query import generate_query, generate_query_data
-
+from .gql.mutation import generate_mutation_data, generate_insert_mutation, generate_delete_mutation, \
+    generate_update_mutation
+from .gql.serial import generate_serial
 class DeepClient:
     _ids = {
       "@deep-foundation/core": {
@@ -448,17 +450,182 @@ class DeepClient:
         else:
             return "id"
 
-    async def insert(self):
-        raise NotImplementedError("Method not implemented")
+    async def insert(self, record: Dict, options: Dict = {}) -> Dict:
+        if not record:
+            return {"error": {"message": "!record"}, "data": None, "loading": False, "networkStatus": None}
 
-    async def update(self):
-        raise NotImplementedError("Method not implemented")
+        table = options.get("table", self.table)
+        returning = options.get("returning", self.default_returning(table))
+        name = options.get("name", 'insertLinks')
 
-    async def delete(self):
-        raise NotImplementedError("Method not implemented")
+        generated_mutation = generate_insert_mutation({
+            "mutations": [
+                generate_mutation_data({
+                    "tableName": table,
+                    "returning": returning,
+                    "variables": {
+                        "input": record,
+                    },
+                    "defs": ["$input: links_insert_input!"]
+                }),
+            ],
+            "name": name,
+        })
+        m = await self.client.execute_async(generated_mutation['mutation'],
+                                            variable_values=generated_mutation['variables'])
+        data = m.get(table, [])
+        del m[table]
+        return {**m, "data": data}
 
-    async def serial(self):
-        raise NotImplementedError("Method not implemented")
+    async def update(self, condition: Dict, record: Dict, options: Dict = {}) -> Dict:
+        if not condition or not record:
+            return {"error": {"message": "!condition or !record"}, "data": None, "loading": False,
+                    "networkStatus": None}
+
+        table = options.get("table", self.table)
+        returning = options.get("returning", self.default_returning(table))
+        name = options.get("name", "UPDATE")
+
+        generated_mutation = generate_update_mutation({
+            "mutations": [
+                generate_mutation_data({
+                    "tableName": table,
+                    "returning": returning,
+                    "variables": {
+                        "set": record,
+                        "where": condition,
+                    }
+                }),
+            ],
+            "name": name,
+        })
+
+        m = await self.client.execute_async(generated_mutation['mutation'],
+                                            variable_values=generated_mutation['variables'])
+        data = m.get("m0", [])
+        # del m["m0"]
+        return {**m, "data": data}
+
+    async def delete(self, exp: Union[Dict, int, List[int]], options: Dict = {}) -> Dict:
+        if not exp:
+            raise ValueError('!exp')
+
+        if isinstance(exp, list):
+            where = {"id": {"_in": exp}}
+        elif isinstance(exp, dict):
+            where = self.serialize_where(exp, options.get("table", "links"))
+        else:
+            where = {"id": {"_eq": exp}}
+
+        table = options.get("table", self.table)
+        returning = options.get("returning", self.default_returning(table))
+
+        variables = options.get("variables", {})
+        name = options.get("name", 'delete')
+
+        delete_mutation = generate_delete_mutation({
+            'mutations': [
+                generate_mutation_data({
+                    'tableName': table,
+                    'operation': 'delete',
+                    'returning': returning,
+                    'variables': {
+                        **variables,
+                        'where': where,
+                    }
+                }),
+            ],
+            'name': name,
+        })
+
+        try:
+            m = await self.client.execute_async(delete_mutation['mutation'],
+                                                variable_values=delete_mutation['variables'])
+            data = m.get("object", [])
+            # del m["object"]
+            return {**m, "data": data}
+        except Exception as e:
+            # handle the exception, perhaps re-raise it after logging or cleaning up
+            raise e
+
+    async def serial(self, operations: List[Dict[str, Any]], returning: str = "from_id id to_id type_id value", silent: bool = False):
+        operations_grouped_by_type_and_table = {}
+
+        for operation in operations["operations"]:
+            if operation["type"] not in operations_grouped_by_type_and_table:
+                operations_grouped_by_type_and_table[operation["type"]] = {}
+
+            if operation["table"] not in operations_grouped_by_type_and_table[operation["type"]]:
+                operations_grouped_by_type_and_table[operation["type"]][operation["table"]] = []
+
+            operations_grouped_by_type_and_table[operation["type"]][operation["table"]].append(operation)
+
+        serial_actions = []
+
+        for operation_type, operations_grouped_by_table in operations_grouped_by_type_and_table.items():
+            for table, operations in operations_grouped_by_table.items():
+                if operation_type == 'insert':
+                    for operation in operations:
+                        serial_actions.append(
+                            generate_insert_mutation({
+                                "mutations": [
+                                    generate_mutation_data({
+                                        "tableName": table,
+                                        "returning": returning,
+                                        "variables": {
+                                            "input": operation["objects"],
+                                        },
+                                        "defs": ["$input: links_insert_input!"]
+                                    }),
+                                ],
+                                "name": "insertLinks",
+                            })
+                        )
+                elif operation_type == 'update':
+                    for operation in operations:
+                        serial_actions.append(
+                            generate_update_mutation({
+                                "mutations": [
+                                    generate_mutation_data({
+                                        "tableName": table,
+                                        "returning": returning,
+                                        "variables": {
+                                            "set": operation["record"],
+                                            "where": operation["condition"],
+                                        }
+                                    }),
+                                ],
+                                "name": "updateLinks",
+                            })
+                        )
+                elif operation_type == 'delete':
+                    for operation in operations:
+                        serial_actions.append(
+                            generate_delete_mutation({
+                                'mutations': [
+                                    generate_mutation_data({
+                                        'tableName': table,
+                                        'operation': 'delete',
+                                        'returning': returning,
+                                        'variables': {
+                                            'where': operation["where"],
+                                        }
+                                    }),
+                                ],
+                                'name': "deleteLinks",
+                            })
+                        )
+
+        for action in serial_actions:
+            try:
+                response = await self.client.execute_async(
+                    action["mutation"],
+                    variable_values=action['variables'])
+                return response
+            except Exception as e:
+                if not silent:
+                    raise e
+                return {"error": str(e)}
 
     async def reserve(self):
         raise NotImplementedError("Method not implemented")

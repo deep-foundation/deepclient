@@ -8,7 +8,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         transport = AIOHTTPTransport(
-            url='https://3006-deepfoundation-dev-kgyolopnp3g.ws-eu96b.gitpod.io/gql',
+            url='https://3006-deepfoundation-dev-hqmvurfv4le.ws-eu98.gitpod.io/gql',
             headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiMzc4In0sImlhdCI6MTY4MTMwNTA3OX0.Gr6wEG9VxMZ4mLqTEkZfN9kIYAjAXGm1r5YCXJTKRws'}
         )
         client = Client(transport=transport, fetch_schema_from_transport=True)
@@ -22,7 +22,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     async def test_methods_raise_not_implemented(self):
         async_methods = [
-            'insert', 'update', 'delete', 'serial', 'reserve', 'wait_for',
+            'reserve', 'wait_for',
             'guest', 'jwt', 'whoami', 'login', 'logout', 'can', 'name'
         ]
         sync_methods = [
@@ -127,6 +127,79 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         assert (await self.client.select(1))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
         assert (await self.client.select({ "id": 1 }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
         assert (await self.client.select({ "id": { "_eq": 1 } }))['data'][0] == {'id': 1, 'type_id': 1, 'from_id': 8, 'to_id': 8, 'value': None}
+
+    async def test_insert(self):
+        new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
+        insert_result = await self.client.insert(new_record)
+        insert_result_data = insert_result['data']['returning'][0]
+        assert insert_result_data["type_id"] == new_record["type_id"]
+        assert insert_result_data["from_id"] == new_record["from_id"]
+        assert insert_result_data["to_id"] == new_record["to_id"]
+        select_result = await self.client.select({"id": insert_result_data['id']})
+        select_result_data = select_result['data'][0]
+        assert select_result_data["type_id"] == new_record["type_id"]
+        assert select_result_data["from_id"] == new_record["from_id"]
+        assert select_result_data["to_id"] == new_record["to_id"]
+
+    async def test_delete(self):
+        new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
+        insert_result = await self.client.insert(new_record)
+        insert_result_data = insert_result['data']['returning'][0]
+        delete_result = await self.client.delete({"id": insert_result_data['id']})
+        select_result = await self.client.select({"id": insert_result_data['id']})
+        assert select_result['data'] == []
+
+    async def test_update(self):
+        new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
+        insert_result = await self.client.insert(new_record)
+        insert_result_data = insert_result['data']['returning'][0]
+        updated_record = {"type_id": 59, "from_id": 1, "to_id": 1}
+        update_result = await self.client.update({"id": {"_eq": insert_result_data['id']}}, updated_record)
+        select_result = await self.client.select({"id": {"_eq": insert_result_data['id']}})
+        select_result_data = select_result['data'][0]
+        assert select_result_data["type_id"] == updated_record["type_id"]
+        assert select_result_data["from_id"] == updated_record["from_id"]
+        assert select_result_data["to_id"] == updated_record["to_id"]
+
+    async def test_serial(self):
+        typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
+        # One insert test
+        linkIdsToDelete = []
+        try:
+            operation = {
+                "table": 'links',
+                "type": 'insert',
+                "objects": {
+                    "type_id": 58, "from_id": 0, "to_id": 0
+                }
+            }
+            result = await self.client.serial({
+                "operations": [
+                    operation,
+                ]
+            })
+
+            insert_result_data = result['links']['returning'][0]
+            linkIdsToDelete.append(insert_result_data["id"])
+            assert insert_result_data["type_id"] == 58
+            assert insert_result_data["from_id"] == 0
+            assert insert_result_data["to_id"] == 0
+        finally:
+            await self.client.delete({"id": linkIdsToDelete[0]})
+
+        # Multiple inserts in one operation test
+        linkIdsToDelete = []
+        try:
+            result = await self.client.serial({
+                "operations": [
+                    operation,
+                    operation
+                ]
+            })
+            insert_result_data = result['links']['returning']
+            linkIdsToDelete.extend(insert_result_data)
+        finally:
+            await self.client.delete({"id": linkIdsToDelete[0]["id"]})
 
     async def test_id(self):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
