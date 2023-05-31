@@ -615,17 +615,19 @@ class DeepClient:
                                 'name': "deleteLinks",
                             })
                         )
-
+        response = {"data": []}
         for action in serial_actions:
             try:
-                response = await self.client.execute_async(
+                response_part = await self.client.execute_async(
                     action["mutation"],
                     variable_values=action['variables'])
-                return response
+                response_part = response_part["links"]["returning"][0]
+                response["data"].append(response_part)
             except Exception as e:
                 if not silent:
                     raise e
                 return {"error": str(e)}
+        return response
 
     async def reserve(self):
         raise NotImplementedError("Method not implemented")

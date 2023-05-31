@@ -165,27 +165,28 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
         # One insert test
         linkIdsToDelete = []
+        objects = {
+            "type_id": 58, "from_id": 0, "to_id": 0
+        }
         try:
             operation = {
                 "table": 'links',
                 "type": 'insert',
-                "objects": {
-                    "type_id": 58, "from_id": 0, "to_id": 0
-                }
+                "objects": objects
             }
-            result = await self.client.serial({
+            response = await self.client.serial({
                 "operations": [
                     operation,
                 ]
             })
-
-            insert_result_data = result['links']['returning'][0]
-            linkIdsToDelete.append(insert_result_data["id"])
-            assert insert_result_data["type_id"] == 58
-            assert insert_result_data["from_id"] == 0
-            assert insert_result_data["to_id"] == 0
+            for link in response["data"]:
+                linkIdsToDelete.append(link["id"])
+                assert link["type_id"] == objects["type_id"]
+                assert link["from_id"] == objects["from_id"]
+                assert link["to_id"] == objects["to_id"]
         finally:
-            await self.client.delete({"id": linkIdsToDelete[0]})
+            for i in linkIdsToDelete:
+                await self.client.delete({"id": i})
 
         # Multiple inserts in one operation test
         linkIdsToDelete = []
@@ -196,10 +197,13 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
                     operation
                 ]
             })
-            insert_result_data = result['links']['returning']
-            linkIdsToDelete.extend(insert_result_data)
+            assert len(result["data"]) == 2
+            for link in result["data"]:
+                assert link
+                linkIdsToDelete.append(link["id"])
         finally:
-            await self.client.delete({"id": linkIdsToDelete[0]["id"]})
+            for i in linkIdsToDelete:
+                await self.client.delete({"id": i})
 
     async def test_id(self):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
