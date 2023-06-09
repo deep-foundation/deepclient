@@ -131,7 +131,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
     async def test_insert(self):
         new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
         insert_result = await self.client.insert(new_record)
-        insert_result_data = insert_result['data']['returning'][0]
+        insert_result_data = insert_result['data'][0]
         assert insert_result_data["type_id"] == new_record["type_id"]
         assert insert_result_data["from_id"] == new_record["from_id"]
         assert insert_result_data["to_id"] == new_record["to_id"]
@@ -144,7 +144,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
     async def test_delete(self):
         new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
         insert_result = await self.client.insert(new_record)
-        insert_result_data = insert_result['data']['returning'][0]
+        insert_result_data = insert_result['data'][0]
         delete_result = await self.client.delete({"id": insert_result_data['id']})
         select_result = await self.client.select({"id": insert_result_data['id']})
         assert select_result['data'] == []
@@ -152,7 +152,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
     async def test_update(self):
         new_record = {"type_id": 58, "from_id": 0, "to_id": 0}
         insert_result = await self.client.insert(new_record)
-        insert_result_data = insert_result['data']['returning'][0]
+        insert_result_data = insert_result['data'][0]
         updated_record = {"type_id": 59, "from_id": 1, "to_id": 1}
         update_result = await self.client.update({"id": {"_eq": insert_result_data['id']}}, updated_record)
         select_result = await self.client.select({"id": {"_eq": insert_result_data['id']}})
