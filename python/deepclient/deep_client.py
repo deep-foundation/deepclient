@@ -583,6 +583,12 @@ class DeepClient:
                         )
                 elif operation_type == 'update':
                     for operation in operations:
+                        if isinstance(operation["exp"], list):
+                            where = {"id": {"_in": operation["exp"]}}
+                        elif isinstance(operation["exp"], dict):
+                            where = self.serialize_where(operation["exp"])
+                        else:
+                            where = {"id": {"_eq": operation["exp"]}}
                         serial_actions.append(
                             generate_update_mutation({
                                 "mutations": [
@@ -590,8 +596,8 @@ class DeepClient:
                                         "tableName": table,
                                         "returning": returning,
                                         "variables": {
-                                            "set": operation["record"],
-                                            "where": operation["condition"],
+                                            "set": operation["set"],
+                                            "where": where,
                                         }
                                     }),
                                 ],

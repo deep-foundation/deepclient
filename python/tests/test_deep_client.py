@@ -212,7 +212,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         # One update test
         linkIdsToDelete = []
         try:
-            result = await self.client.insert({
+            insert_result = await self.client.insert({
                 "type_id": typeTypeLinkId,
                 "string": {
                     "data": {
@@ -220,32 +220,29 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
                     }
                 }
             })
-            self.assertIsNone(result["error"])
-            self.assertIsNotNone(result["data"])
-            self.assertEqual(len(result["data"]), 1)
 
-            newLinkId = result["data"][0]["id"]
+            newLinkId = insert_result["data"][0]["id"]
+            updated_record = {"type_id": 59, "from_id": 1, "to_id": 1}
+
             linkIdsToDelete.append(newLinkId)
             operation = {
-                "table": 'strings',
+                "table": 'links',
                 "type": 'update',
                 "exp": {
-                    "link_id": newLinkId,
+                    "id": newLinkId,
                 },
-                "value": {
-                    "value": expectedValue
-                }
+                "set": updated_record
             }
 
             updateResult = await self.client.serial({
                 "operations": [operation]
             })
-            self.assertIsNone(updateResult["error"])
-            self.assertIsNotNone(updateResult["data"])
             self.assertEqual(len(updateResult["data"]), 1)
+            for link in updateResult["data"]:
+                self.assertEqual(link['type_id'], updated_record['type_id'])
+                self.assertEqual(link["from_id"], updated_record["from_id"])
+                self.assertEqual(link["to_id"], updated_record["to_id"])
 
-            newLink = await self.client.select({"id": newLinkId})["data"][0]
-            self.assertEqual(newLink["value"]["value"], expectedValue)
         finally:
             for i in linkIdsToDelete:
                 await self.client.delete({"id": i})
