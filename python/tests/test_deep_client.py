@@ -8,7 +8,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         transport = AIOHTTPTransport(
-            url='https://3006-deepfoundation-dev-hqmvurfv4le.ws-eu98.gitpod.io/gql',
+            url='https://3006-deepfoundation-dev-r9wbu65yu2h.ws-eu99.gitpod.io/gql',
             headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiMzc4In0sImlhdCI6MTY4MTMwNTA3OX0.Gr6wEG9VxMZ4mLqTEkZfN9kIYAjAXGm1r5YCXJTKRws'}
         )
         client = Client(transport=transport, fetch_schema_from_transport=True)
@@ -161,7 +161,7 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         assert select_result_data["from_id"] == updated_record["from_id"]
         assert select_result_data["to_id"] == updated_record["to_id"]
 
-    async def test_serial(self):
+    async def test_serial_insert(self):
         typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
         # One insert test
         linkIdsToDelete = []
@@ -201,6 +201,91 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
             for link in result["data"]:
                 assert link
                 linkIdsToDelete.append(link["id"])
+        finally:
+            for i in linkIdsToDelete:
+                await self.client.delete({"id": i})
+
+    async def test_serial_update(self):
+        typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
+        expectedValue = 'newStringValue'
+
+        # One update test
+        linkIdsToDelete = []
+        try:
+            result = await self.client.insert({
+                "type_id": typeTypeLinkId,
+                "string": {
+                    "data": {
+                        "value": "stringValue"
+                    }
+                }
+            })
+            self.assertIsNone(result["error"])
+            self.assertIsNotNone(result["data"])
+            self.assertEqual(len(result["data"]), 1)
+
+            newLinkId = result["data"][0]["id"]
+            linkIdsToDelete.append(newLinkId)
+            operation = {
+                "table": 'strings',
+                "type": 'update',
+                "exp": {
+                    "link_id": newLinkId,
+                },
+                "value": {
+                    "value": expectedValue
+                }
+            }
+
+            updateResult = await self.client.serial({
+                "operations": [operation]
+            })
+            self.assertIsNone(updateResult["error"])
+            self.assertIsNotNone(updateResult["data"])
+            self.assertEqual(len(updateResult["data"]), 1)
+
+            newLink = await self.client.select({"id": newLinkId})["data"][0]
+            self.assertEqual(newLink["value"]["value"], expectedValue)
+        finally:
+            for i in linkIdsToDelete:
+                await self.client.delete({"id": i})
+
+    async def test_serial_delete(self):
+        typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
+
+        # One delete test
+        linkIdsToDelete = []
+        try:
+            result = await self.client.insert({
+                "type_id": typeTypeLinkId,
+                "string": {
+                    "data": {
+                        "value": "stringValue"
+                    }
+                }
+            })
+            newLinkId = result["data"][0]["id"]
+            linkIdsToDelete.append(newLinkId)
+
+            operation = {
+                "table": 'links',
+                "type": 'delete',
+                "exp": {
+                    "id": newLinkId
+                }
+            }
+
+            deleteResult = await self.client.serial({
+                "operations": [operation]
+            })
+            self.assertEqual(len(deleteResult["data"]), 1)
+
+            for link in result["data"]:
+                self.assertEqual(link["id"], newLinkId)
+
+            newLink = await self.client.select(newLinkId)
+            newLinkData = newLink["data"]
+            self.assertEqual(len(newLinkData), 0)
         finally:
             for i in linkIdsToDelete:
                 await self.client.delete({"id": i})

@@ -475,7 +475,7 @@ class DeepClient:
                                             variable_values=generated_mutation['variables'])
         data = m.get(table, [])
         del m[table]
-        return {**m, "data": data}
+        return {**m, "data": data['returning']}
 
     async def update(self, condition: Dict, record: Dict, options: Dict = {}) -> Dict:
         if not condition or not record:
@@ -600,6 +600,13 @@ class DeepClient:
                         )
                 elif operation_type == 'delete':
                     for operation in operations:
+                        if isinstance(operation["exp"], list):
+                            where = {"id": {"_in": operation["exp"]}}
+                        elif isinstance(operation["exp"], dict):
+                            where = self.serialize_where(operation["exp"])
+                        else:
+                            where = {"id": {"_eq": operation["exp"]}}
+
                         serial_actions.append(
                             generate_delete_mutation({
                                 'mutations': [
@@ -608,7 +615,7 @@ class DeepClient:
                                         'operation': 'delete',
                                         'returning': returning,
                                         'variables': {
-                                            'where': operation["where"],
+                                            'where': where,
                                         }
                                     }),
                                 ],

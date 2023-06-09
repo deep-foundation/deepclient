@@ -83,8 +83,9 @@ def generate_delete_mutation(options: Dict[str, Union[str, List[Any]]]) -> Dict[
     variable_defs = []
 
     for m in called_mutations:
+        returning = "returning {" + f"{m['returning']}" + "}"
         variable_name = f"{m['resultAlias']}Where"
-        mutation_bodies.append(f'{m["resultAlias"]}: delete_{m["tableName"]}(where: ${variable_name}) {{ affected_rows }}')
+        mutation_bodies.append(f'{m["resultAlias"]}: delete_{m["tableName"]}(where: ${variable_name}) {{affected_rows {returning}}}')
         variable_defs.append(f'${variable_name}: links_bool_exp!')  # replace with your actual type
 
         for v, variable in m["variables"].items():
