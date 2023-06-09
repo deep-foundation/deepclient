@@ -207,7 +207,6 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     async def test_serial_update(self):
         typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
-        expectedValue = 'newStringValue'
 
         # One update test
         linkIdsToDelete = []
@@ -238,6 +237,62 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
                 "operations": [operation]
             })
             self.assertEqual(len(updateResult["data"]), 1)
+            for link in updateResult["data"]:
+                self.assertEqual(link['type_id'], updated_record['type_id'])
+                self.assertEqual(link["from_id"], updated_record["from_id"])
+                self.assertEqual(link["to_id"], updated_record["to_id"])
+
+        finally:
+            for i in linkIdsToDelete:
+                await self.client.delete({"id": i})
+        # Two update test
+
+        # One update test
+        linkIdsToDelete = []
+        try:
+            insert_result_one = await self.client.insert({
+                "type_id": typeTypeLinkId,
+                "string": {
+                    "data": {
+                        "value": "stringValue"
+                    }
+                }
+            })
+            insert_result_two = await self.client.insert({
+                "type_id": typeTypeLinkId,
+                "string": {
+                    "data": {
+                        "value": "stringValue"
+                    }
+                }
+            })
+            newLinkId_one = insert_result_one["data"][0]["id"]
+            newLinkId_two = insert_result_two["data"][0]["id"]
+            updated_record = {"type_id": 59, "from_id": 1, "to_id": 1}
+
+            linkIdsToDelete.append(newLinkId_one)
+            linkIdsToDelete.append(newLinkId_two)
+            operation_one = {
+                "table": 'links',
+                "type": 'update',
+                "exp": {
+                    "id": newLinkId_one,
+                },
+                "set": updated_record
+            }
+            operation_two = {
+                "table": 'links',
+                "type": 'update',
+                "exp": {
+                    "id": newLinkId_two,
+                },
+                "set": updated_record
+            }
+
+            updateResult = await self.client.serial({
+                "operations": [operation_one, operation_two]
+            })
+            self.assertEqual(len(updateResult["data"]), 2)
             for link in updateResult["data"]:
                 self.assertEqual(link['type_id'], updated_record['type_id'])
                 self.assertEqual(link["from_id"], updated_record["from_id"])
