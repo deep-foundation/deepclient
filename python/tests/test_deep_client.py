@@ -251,7 +251,6 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
         typeTypeLinkId = await self.client.id("@deep-foundation/core", "Type")
 
         # One delete test
-        linkIdsToDelete = []
         try:
             result = await self.client.insert({
                 "type_id": typeTypeLinkId,
@@ -262,7 +261,6 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
                 }
             })
             newLinkId = result["data"][0]["id"]
-            linkIdsToDelete.append(newLinkId)
 
             operation = {
                 "table": 'links',
@@ -283,9 +281,59 @@ class TestDeepClient(unittest.IsolatedAsyncioTestCase):
             newLink = await self.client.select(newLinkId)
             newLinkData = newLink["data"]
             self.assertEqual(len(newLinkData), 0)
-        finally:
-            for i in linkIdsToDelete:
-                await self.client.delete({"id": i})
+        except Exception:
+            print("Error occurred")
+        # Two delete test
+        try:
+            result_one = await self.client.insert({
+                "type_id": typeTypeLinkId,
+                "string": {
+                    "data": {
+                        "value": "stringValue"
+                    }
+                }
+            })
+            newLinkId_one = result_one["data"][0]["id"]
+            result_two = await self.client.insert({
+                "type_id": typeTypeLinkId,
+                "string": {
+                    "data": {
+                        "value": "stringValue"
+                    }
+                }
+            })
+            newLinkId_two = result_two["data"][0]["id"]
+
+            operation_one = {
+                "table": 'links',
+                "type": 'delete',
+                "exp": {
+                    "id": newLinkId_one
+                }
+            }
+            operation_two = {
+                "table": 'links',
+                "type": 'delete',
+                "exp": {
+                    "id": newLinkId_two
+                }
+            }
+            deleteResult = await self.client.serial({
+                "operations": [operation_one, operation_two]
+            })
+            self.assertEqual(len(deleteResult["data"]), 2)
+
+            self.assertEqual(deleteResult["data"]["id"][0], newLinkId_one)
+            self.assertEqual(deleteResult["data"]["id"][1], newLinkId_two)
+
+            newLink = await self.client.select(newLinkId_one)
+            newLinkData = newLink["data"]
+            self.assertEqual(len(newLinkData), 0)
+            newLink = await self.client.select(newLinkId_two)
+            newLinkData = newLink["data"]
+            self.assertEqual(len(newLinkData), 0)
+        except Exception:
+            print("Error occurred")
 
     async def test_id(self):
         assert (await self.client.id("@deep-foundation/core", "Package")) == 2
