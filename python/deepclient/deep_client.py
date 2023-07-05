@@ -548,10 +548,24 @@ class DeepClient:
             # handle the exception, perhaps re-raise it after logging or cleaning up
             raise e
 
-    async def serial(self, operations: List[Dict[str, Any]], returning: str = "from_id id to_id type_id value", silent: bool = False):
+    async def serial(self, AsyncSerialParams: Dict):
+        if not AsyncSerialParams:
+            return {"error": {"message": "!AsyncSerialParams"}, "data": None, "loading": False, "networkStatus": None}
+        if AsyncSerialParams["operations"]:
+            operations = AsyncSerialParams["operations"]
+        else:
+            return {"error": {"message": "!operations"}, "data": None, "loading": False, "networkStatus": None}
+        if AsyncSerialParams.get("returning"):
+            returning = AsyncSerialParams["returning"]
+        else:
+            returning = "from_id id to_id type_id value"
+        if AsyncSerialParams.get("silent"):
+            silent = AsyncSerialParams["silent"]
+        else:
+            silent = False
         operations_grouped_by_type_and_table = {}
 
-        for operation in operations["operations"]:
+        for operation in operations:
             if operation["type"] not in operations_grouped_by_type_and_table:
                 operations_grouped_by_type_and_table[operation["type"]] = {}
 
@@ -566,6 +580,10 @@ class DeepClient:
             for table, operations in operations_grouped_by_table.items():
                 if operation_type == 'insert':
                     for operation in operations:
+                        if AsyncSerialParams.get("name"):
+                            name = AsyncSerialParams["name"]
+                        else:
+                            name = "insertLinks"
                         serial_actions.append(
                             generate_insert_mutation({
                                 "mutations": [
@@ -578,7 +596,7 @@ class DeepClient:
                                         "defs": ["$input: links_insert_input!"]
                                     }),
                                 ],
-                                "name": "insertLinks",
+                                "name": name,
                             })
                         )
                 elif operation_type == 'update':
@@ -589,6 +607,10 @@ class DeepClient:
                             where = self.serialize_where(operation["exp"])
                         else:
                             where = {"id": {"_eq": operation["exp"]}}
+                        if AsyncSerialParams.get("name"):
+                            name = AsyncSerialParams["name"]
+                        else:
+                            name = "updateLinks"
                         serial_actions.append(
                             generate_update_mutation({
                                 "mutations": [
@@ -601,7 +623,7 @@ class DeepClient:
                                         }
                                     }),
                                 ],
-                                "name": "updateLinks",
+                                "name": name,
                             })
                         )
                 elif operation_type == 'delete':
@@ -612,7 +634,10 @@ class DeepClient:
                             where = self.serialize_where(operation["exp"])
                         else:
                             where = {"id": {"_eq": operation["exp"]}}
-
+                        if AsyncSerialParams.get("name"):
+                            name = AsyncSerialParams["name"]
+                        else:
+                            name = "deleteLinks"
                         serial_actions.append(
                             generate_delete_mutation({
                                 'mutations': [
@@ -625,7 +650,7 @@ class DeepClient:
                                         }
                                     }),
                                 ],
-                                'name': "deleteLinks",
+                                'name': name,
                             })
                         )
         response = {"data": []}
