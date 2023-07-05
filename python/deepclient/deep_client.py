@@ -5,6 +5,7 @@ from .query import generate_query, generate_query_data
 from .gql.mutation import generate_mutation_data, generate_insert_mutation, generate_delete_mutation, \
     generate_update_mutation
 from .gql.serial import generate_serial
+
 class DeepClient:
     _ids = {
       "@deep-foundation/core": {
