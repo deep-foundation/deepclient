@@ -30,7 +30,7 @@ def generate_insert_mutation(options: Dict[str, Union[str, List[Any]]]) -> Dict[
 
     defs = ",".join([",".join(m.get("defs", [])) for m in mutations])
     mutation_bodies = [
-        f'{m["resultAlias"]}: insert_{m["tableName"]}(objects: [$input]) {{ returning {{ {m["returning"]} }} }}' for m
+        f'{m["resultAlias"]}: insert_{m["tableName"]}(objects: $input) {{ returning {{ {m["returning"]} }} }}' for m
         in mutations]
     mutation_string = f"{operation} {name}({defs}) {{{','.join(mutation_bodies)}}}"
     mutation = gql(mutation_string)

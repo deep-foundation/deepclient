@@ -451,8 +451,8 @@ class DeepClient:
         else:
             return "id"
 
-    async def insert(self, record: Dict, options: Dict = {}) -> Dict:
-        if not record:
+    async def insert(self, objects, options: Dict = {}) -> Dict:
+        if not objects:
             return {"error": {"message": "!record"}, "data": None, "loading": False, "networkStatus": None}
 
         table = options.get("table", self.table)
@@ -465,13 +465,15 @@ class DeepClient:
                     "tableName": table,
                     "returning": returning,
                     "variables": {
-                        "input": record,
+                        "input": objects,
                     },
-                    "defs": ["$input: links_insert_input!"]
+                    "defs": ["$input: [links_insert_input!]!"]
                 }),
             ],
             "name": name,
         })
+
+        print(generated_mutation)
         m = await self.client.execute_async(generated_mutation['mutation'],
                                             variable_values=generated_mutation['variables'])
         data = m.get(table, [])
