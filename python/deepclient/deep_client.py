@@ -2,9 +2,9 @@ import asyncio
 from typing import Any, Optional, Union, Dict, List
 from .deep_client_options import DeepClientOptions
 from .query import generate_query, generate_query_data
-from .gql.mutation import generate_mutation_data, generate_insert_mutation, generate_delete_mutation, \
+from .generate_gql_operations.mutation import generate_mutation_data, generate_insert_mutation, generate_delete_mutation, \
     generate_update_mutation
-from .gql.serial import generate_serial
+from .generate_gql_operations.serial import generate_serial
 
 class DeepClient:
     _ids = {
@@ -596,7 +596,7 @@ class DeepClient:
                                         "variables": {
                                             "input": operation["objects"],
                                         },
-                                        "defs": ["$input: links_insert_input!"]
+                                        "defs": ["$input: [links_insert_input!]!"]
                                     }),
                                 ],
                                 "name": name,
