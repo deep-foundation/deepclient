@@ -1,5 +1,7 @@
 import unittest
 import asyncio
+import os
+from dotenv import load_dotenv
 from deepclient import DeepClient, DeepClientOptions
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
@@ -7,9 +9,10 @@ from gql.transport.aiohttp import AIOHTTPTransport
 class TestDeepClient(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
+        load_dotenv()
         transport = AIOHTTPTransport(
-            url='https://3006-deepfoundation-dev-wcwgmydskvv.ws-eu101.gitpod.io/gql',
-            headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiMzgwIn0sImlhdCI6MTY4OTE5Mzk4N30.mBO6rnfAH-nwiTqAfwvpPHtbdUbSzrzrSMXW8ztDmmM'}
+            url=os.getenv('URL_GQL'),
+            headers={'Authorization': 'Bearer %s' % (os.getenv('BEARER_TOKEN'))}
         )
         client = Client(transport=transport, fetch_schema_from_transport=True)
 

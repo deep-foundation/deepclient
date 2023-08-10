@@ -2,9 +2,9 @@ import asyncio
 from typing import Any, Optional, Union, Dict, List
 from .deep_client_options import DeepClientOptions
 from .query import generate_query, generate_query_data
-from .generate_gql_operations.mutation import generate_mutation_data, generate_insert_mutation, generate_delete_mutation, \
+from .gql_operations.mutation import generate_mutation_data, generate_insert_mutation, generate_delete_mutation, \
     generate_update_mutation
-from .generate_gql_operations.serial import generate_serial
+from .gql_operations.serial import generate_serial
 
 class DeepClient:
     _ids = {
@@ -480,9 +480,9 @@ class DeepClient:
         del m[table]
         return {**m, "data": data['returning']}
 
-    async def update(self, condition: Dict, record: Dict, options: Dict = {}) -> Dict:
-        if not condition or not record:
-            return {"error": {"message": "!condition or !record"}, "data": None, "loading": False,
+    async def update(self, exp: Dict, value: Dict, options: Dict = {}) -> Dict:
+        if not exp or not value:
+            return {"error": {"message": "!exp or !value"}, "data": None, "loading": False,
                     "networkStatus": None}
 
         table = options.get("table", self.table)
@@ -495,8 +495,8 @@ class DeepClient:
                     "tableName": table,
                     "returning": returning,
                     "variables": {
-                        "set": record,
-                        "where": condition,
+                        "set": value,
+                        "where": exp,
                     }
                 }),
             ],
