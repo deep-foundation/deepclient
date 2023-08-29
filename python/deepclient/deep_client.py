@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Any, Optional, Union, Dict, List
 from .deep_client_options import DeepClientOptions
 from .query import generate_query, generate_query_data
@@ -684,7 +685,7 @@ class DeepClient:
         if self._ids.get(start) and self._ids[start].get(path[0]):
             return self._ids[start][path[0]]
         
-        q = await self.select(path_to_where(start, *path))
+        q = await self.select(self.path_to_where(start, *path))
         if q.get("error"):
             raise Exception(q["error"])
 
