@@ -149,5 +149,4 @@ cython_debug/
 *.xml
 !/schema.graphql
 
-!cpp-docker-isolation-provider-lib.so
-!libprovider-cpp.so
+test_deep_client
